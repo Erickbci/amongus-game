@@ -122,7 +122,31 @@ startReactor = {
 
     },
 
-    load() {},
+    async load() {
+        return new Promise(resolve => {
+            console.log("Loading Game...")
+            startReactor.audio.loadAudios()
+
+            const playerMemory  = startReactor.interface.playerMemory
+            const memory = startReactor.interface.playerMemoryButtons
+            
+            Array.prototype.forEach.call(memory, (element) => {
+
+                element.addEventListener("click", () => {
+                if (playerMemory.classList.contains("playerActive")) {
+                    startReactor.play(parseInt(element.dataset.memory))
+                    console.log("O valor do elemento clicado é: " + element.dataset.memory)
+
+                    element.style.animation = "playermemoryClick .4s"
+                    setTimeout(() => element.style.animation = "", 400)
+                }
+                })  
+
+            })
+        })
+
+
+     },
     start() {
 
         startReactor.computerCombination = startReactor.createCombination()
@@ -130,7 +154,7 @@ startReactor = {
         startReactor.playerCombination = []
         startReactor.interface.start().then(() => {
             setTimeout(() => {
-                startReactor.playerCombination()
+                startReactor.playCombination()
             }, 500)
         })
         
@@ -145,5 +169,62 @@ startReactor = {
         }
 
         return newCombination
+    },
+
+    play(index) {
+
+        startReactor.interface.playItem(index, startReactor.playerCombination.length, 'player')
+        startReactor.playerCombination.push(index)
+
+        if (startReactor.isTheRightCombination(startReactor.playerCombination.length)) {
+            
+            if (startReactor.playerCombination.length == startReactor.combinationMaxPosition) {
+                startReactor.interface.endGame("complete")
+                setTimeout(() => {
+                    startReactor.start()
+                }, 1200)
+                return
+            }
+
+            if (startReactor.playerCombination.length == startReactor.computerCombinationPosition) {
+                startReactor.computerCombinationPosition ++
+                setTimeout(() => {
+                    startReactor.playCombination()
+                }, 1200)
+                return
+            }
+        } else {
+                startReactor.interface.endGame("fail")
+                document.getElementById("title").textContent = "Você é o impostor"
+                    setTimeout(() => {
+                        document.getElementById("title").textContent = "START REACTOR"
+                        startReactor.start()
+                    }, 1400)
+                return
+        }
+    },
+
+
+    playCombination() {
+        startReactor.playerCombination = []
+        startReactor.interface.disableButtons()
+        startReactor.interface.turnAllLedsOff()
+
+        for (let i = 0; i <= startReactor.computerCombinationPosition -1; i++) {
+            setTimeout(() => {
+                startReactor.interface.playItem(startReactor.computerCombination[i], i)
+            }, 400 * (i + 1));
+        }
+
+        setTimeout(() => {
+            startReactor.interface.turnAllLedsOff()
+            startReactor.interface.enableButtons()
+        }, 600 * startReactor.computerCombinationPosition)
+    },
+
+    isTheRightCombination(position) {
+        let computerCombination = startReactor.computerCombination.slice(0, position)
+        return ( computerCombination.toString() == startReactor.playerCombination.toString()) 
     }
+
 }
